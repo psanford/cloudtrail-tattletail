@@ -12,16 +12,17 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/inconshreveable/log15"
 	"github.com/itchyny/gojq"
+	"github.com/psanford/cloudtrail-tattletail/awsstub"
 	"github.com/psanford/cloudtrail-tattletail/config"
 	"github.com/psanford/cloudtrail-tattletail/internal/destination"
 	"github.com/psanford/cloudtrail-tattletail/internal/destsns"
 )
 
 func main() {
+	awsstub.InitAWS()
 	s := newServer()
 	lambda.Start(s.Handler)
 }
@@ -31,12 +32,8 @@ func newServer() *server {
 		destsns.NewLoader(),
 	}
 
-	sess := session.New(&aws.Config{
-		Region: aws.String(os.Getenv("AWS_REGION")),
-	})
-
 	s := server{
-		s3client: s3.New(sess),
+		loaders: make(map[string]destination.Loader),
 	}
 	for _, l := range loaders {
 		s.loaders[l.Type()] = l
@@ -45,8 +42,7 @@ func newServer() *server {
 }
 
 type server struct {
-	s3client *s3.S3
-	loaders  map[string]destination.Loader
+	loaders map[string]destination.Loader
 
 	rules []Rule
 }
@@ -80,7 +76,7 @@ func (s *server) loadConfig(lgr log15.Logger) error {
 
 	if bucketName != "" && confPath != "" {
 		lgr = lgr.New("conf_src", "s3", "bucket", bucketName, "path", confPath)
-		confResp, err := s.s3client.GetObject(&s3.GetObjectInput{
+		confResp, err := awsstub.S3GetObj(&s3.GetObjectInput{
 			Bucket: aws.String(bucketName),
 			Key:    aws.String(confPath),
 		})
@@ -174,7 +170,7 @@ func (s *server) handleRecord(lgr log15.Logger, s3rec events.S3EventRecord) erro
 		Key:    &file,
 	}
 
-	resp, err := s.s3client.GetObject(&getInput)
+	resp, err := awsstub.S3GetObj(&getInput)
 	if err != nil {
 		lgr.Error("s3_fetch_err", "err", err)
 		return err

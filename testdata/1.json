@@ -1,0 +1,136 @@
+{
+  "Records": [
+    {
+      "eventVersion": "1.08",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAVJ2E6QGRUSOFPZVEM:AWSCLI-Session",
+        "arn": "arn:aws:sts::123456789:assumed-role/admin_read_write/AWSCLI-Session",
+        "accountId": "123456789",
+        "accessKeyId": "ASIAVJ2E6QGRTNFEV3HG",
+        "sessionContext": {
+          "sessionIssuer": {
+            "type": "Role",
+            "principalId": "AROAVJ2E6QGRUSOFPZVEM",
+            "arn": "arn:aws:iam::123456789:role/admin_read_write",
+            "accountId": "123456789",
+            "userName": "admin_read_write"
+          },
+          "webIdFederationData": {},
+          "attributes": {
+            "mfaAuthenticated": "true",
+            "creationDate": "2021-07-10T16:01:05Z"
+          }
+        }
+      },
+      "eventTime": "2021-07-10T16:41:35Z",
+      "eventSource": "iam.amazonaws.com",
+      "eventName": "ListAttachedRolePolicies",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "1.1.1.1",
+      "userAgent": "aws-sdk-go/1.35.25 (go1.14.5; linux; amd64) APN/1.0 HashiCorp/1.0 Terraform/0.13.5 (+https://www.terraform.io)",
+      "requestParameters": {
+        "roleName": "hn-rss-assume-role"
+      },
+      "responseElements": null,
+      "requestID": "907b2b6b-15cb-41bb-b92e-64af23c6bfbc",
+      "eventID": "b788100d-c21b-4575-a09f-5d01483d28b8",
+      "readOnly": true,
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "eventCategory": "Management",
+      "recipientAccountId": "123456789"
+    },
+    {
+      "eventVersion": "1.08",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAVJ2E6QGRUSOFPZVEM:AWSCLI-Session",
+        "arn": "arn:aws:sts::123456789:assumed-role/admin_read_write/AWSCLI-Session",
+        "accountId": "123456789",
+        "accessKeyId": "ASIAVJ2E6QGRTNFEV3HG",
+        "sessionContext": {
+          "sessionIssuer": {
+            "type": "Role",
+            "principalId": "AROAVJ2E6QGRUSOFPZVEM",
+            "arn": "arn:aws:iam::123456789:role/admin_read_write",
+            "accountId": "123456789",
+            "userName": "admin_read_write"
+          },
+          "webIdFederationData": {},
+          "attributes": {
+            "mfaAuthenticated": "true",
+            "creationDate": "2021-07-10T16:01:05Z"
+          }
+        }
+      },
+      "eventTime": "2021-07-10T16:42:10Z",
+      "eventSource": "iam.amazonaws.com",
+      "eventName": "CreateUser",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "1.1.1.1",
+      "userAgent": "aws-sdk-go/1.35.25 (go1.14.5; linux; amd64) APN/1.0 HashiCorp/1.0 Terraform/0.13.5 (+https://www.terraform.io)",
+      "requestParameters": {
+        "path": "/",
+        "userName": "user1"
+      },
+      "responseElements": {
+        "user": {
+          "path": "/",
+          "userName": "user1",
+          "userId": "AIDAVJ2E6QGRR7EVG7JBE",
+          "arn": "arn:aws:iam::123456789:user/user1",
+          "createDate": "Jul 10, 2021 4:42:10 PM"
+        }
+      },
+      "requestID": "b9e6cd18-9632-4258-9539-31ecc2569f43",
+      "eventID": "692d22af-1b8a-4a40-bd87-e290897e9e95",
+      "readOnly": false,
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "eventCategory": "Management",
+      "recipientAccountId": "123456789"
+    },
+    {
+      "eventVersion": "1.08",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAVJ2E6QGRUSOFPZVEM:AWSCLI-Session",
+        "arn": "arn:aws:sts::123456789:assumed-role/admin_read_write/AWSCLI-Session",
+        "accountId": "123456789",
+        "accessKeyId": "ASIAVJ2E6QGRTNFEV3HG",
+        "sessionContext": {
+          "sessionIssuer": {
+            "type": "Role",
+            "principalId": "AROAVJ2E6QGRUSOFPZVEM",
+            "arn": "arn:aws:iam::123456789:role/admin_read_write",
+            "accountId": "123456789",
+            "userName": "admin_read_write"
+          },
+          "webIdFederationData": {},
+          "attributes": {
+            "mfaAuthenticated": "true",
+            "creationDate": "2021-07-10T16:01:05Z"
+          }
+        }
+      },
+      "eventTime": "2021-07-10T16:41:35Z",
+      "eventSource": "iam.amazonaws.com",
+      "eventName": "ListAttachedRolePolicies",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "1.1.1.1",
+      "userAgent": "aws-sdk-go/1.35.25 (go1.14.5; linux; amd64) APN/1.0 HashiCorp/1.0 Terraform/0.13.5 (+https://www.terraform.io)",
+      "requestParameters": {
+        "roleName": "hn-rss-assume-role"
+      },
+      "responseElements": null,
+      "requestID": "907b2b6b-15cb-41bb-b92e-64af23c6bfbc",
+      "eventID": "b788100d-c21b-4575-a09f-5d01483d28b8",
+      "readOnly": true,
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "eventCategory": "Management",
+      "recipientAccountId": "123456789"
+    }
+  ]
+}

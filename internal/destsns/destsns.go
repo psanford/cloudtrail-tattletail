@@ -3,12 +3,11 @@ package destsns
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
+	"github.com/psanford/cloudtrail-tattletail/awsstub"
 	"github.com/psanford/cloudtrail-tattletail/config"
 	"github.com/psanford/cloudtrail-tattletail/internal/destination"
 )
@@ -16,18 +15,7 @@ import (
 type Loader struct {
 }
 
-var (
-	snsPublish func(*sns.PublishInput) (*sns.PublishOutput, error)
-)
-
 func NewLoader() *Loader {
-	awsSession := session.New(&aws.Config{
-		Region: aws.String(os.Getenv("AWS_REGION")),
-	})
-	snsClient := sns.New(awsSession)
-
-	snsPublish = snsClient.Publish
-
 	return &Loader{}
 }
 
@@ -80,7 +68,7 @@ func (d *DestSNS) Send(name, desc string, rec map[string]interface{}, matchObj i
 		return err
 	}
 
-	_, err = snsPublish(&sns.PublishInput{
+	_, err = awsstub.SnsPublish(&sns.PublishInput{
 		Message:  aws.String(string(payloadBytes)),
 		TopicArn: &d.arn,
 	})
