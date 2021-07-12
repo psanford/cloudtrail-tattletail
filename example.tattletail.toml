@@ -1,0 +1,21 @@
+[[rule]]
+name = "match foo.bar.baz"
+jq_match = "foo.bar.baz"
+destinations = ["Default SNS"]
+description = "Some description about the alert"
+
+[[destination]]
+id = "Default SNS"
+type = "sns"
+sns_arn = "arn:aws:sns:us-east-1:1234567890:cloudtail_alert"
+
+[[destination]]
+id = "Slack Warnings"
+type = "slack_webhook"
+webhook_url = "https://foo.slack.com/some/webhook/url"
+
+[[destination]]
+id = "Email"
+type = "ses"
+to_emails = ["foo@example.com", "bar@example.com"]
+from_email = "cloudtrail_alerts@example.com"
