@@ -1,8 +1,14 @@
 [[rule]]
-name = "match foo.bar.baz"
-jq_match = "foo.bar.baz"
-destinations = ["Default SNS"]
-description = "Some description about the alert"
+name = "Create User"
+jq_match = 'select(.eventName == "CreateUser") | "username: \(.responseElements.user.userName)"'
+description = "A new IAM user has been created"
+destinations = ["Default SNS", "Slack Warnings", "Email"]
+
+[[rule]]
+name = "Create AccessKey"
+jq_match = 'select(.eventName == "CreateAccessKey")'
+description = "A new Access Key has been created"
+destinations = ["Default SNS", "Slack Warnings", "Email"]
 
 [[destination]]
 id = "Default SNS"
