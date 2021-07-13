@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -57,18 +60,38 @@ func TestRuleMatchingSNS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	config := `
+	var webhookPayloads []string
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Read err", 500)
+			return
+		}
+		webhookPayloads = append(webhookPayloads, string(body))
+	})
+
+	fakeSlack := httptest.NewServer(handler)
+	defer fakeSlack.Close()
+
+	configTmpl := `
 [[rule]]
 name = "Create User"
 jq_match = 'select(.eventName == "CreateUser") | "username: \(.responseElements.user.userName)"'
-destinations = ["Default SNS"]
+destinations = ["Default SNS", "Default Slack"]
 description = "A new IAM user has been created"
 
 [[destination]]
 id = "Default SNS"
 type = "sns"
 sns_arn = "arn:aws:sns:us-east-1:1234567890:cloudtail_alert"
+
+[[destination]]
+id = "Default Slack"
+type = "slack_webhook"
+webhook_url = "%s"
 `
+	config := fmt.Sprintf(configTmpl, fakeSlack.URL)
 
 	confBucket := "mandrake-Aquarius"
 	confKey := "horseplay-shoveling.toml"
@@ -125,6 +148,19 @@ sns_arn = "arn:aws:sns:us-east-1:1234567890:cloudtail_alert"
 		t.Fatal(cmp.Diff(snsMessages, expect))
 	}
 
+	if len(webhookPayloads) != 1 {
+		t.Fatalf("expected 1 webhook but got %d", len(webhookPayloads))
+	}
+
+	var webhookMsg slackMsg
+	err = json.Unmarshal([]byte(webhookPayloads[0]), &webhookMsg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(webhookMsg.Blocks) != 5 {
+		t.Fatalf("Expected 5 slack blocks but got %d", len(webhookMsg.Blocks))
+	}
 }
 
 func fakeGetObj(i *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
@@ -166,4 +202,25 @@ func fakeSNSPublish(i *sns.PublishInput) (*sns.PublishOutput, error) {
 
 	snsMessages = append(snsMessages, msg)
 	return nil, nil
+}
+
+type slackMsg struct {
+	Blocks []slackBlock `json:"blocks"`
+}
+
+type slackBlock struct {
+	Fields []slackField `json:"fields"`
+	Text   slackText    `json:"text"`
+	Type   string       `json:"type"`
+}
+
+type slackField struct {
+	Text     string `json:"text"`
+	Type     string `json:"type"`
+	Verbatim bool   `json:"verbatim"`
+}
+
+type slackText struct {
+	Text string `json:"text"`
+	Type string `json:"type"`
 }

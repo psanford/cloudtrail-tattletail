@@ -11,4 +11,5 @@ require (
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac
 	github.com/itchyny/gojq v0.12.4
 	github.com/mattn/go-colorable v0.1.8 // indirect
+	github.com/slack-go/slack v0.9.1
 )
