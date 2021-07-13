@@ -79,3 +79,7 @@ Create a Go Lambda function. Upload the `cloudtrail-tattletail.zip` file as the 
 Add an s3 trigger from your CloudTrail s3 bucket.
 
 Add any permissions for invoking SNS or SES if you are using those destination types.
+
+# Screenshots
+
+<img src="https://raw.githubusercontent.com/psanford/cloudtrail-tattletail/main/screenshots/slack-webhook.png?raw=true" alt="Slack Webhook" width="637" />
