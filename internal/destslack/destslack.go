@@ -53,59 +53,51 @@ func (d *DestSlackWebhook) Type() string {
 
 func (d *DestSlackWebhook) Send(name, desc string, rec map[string]interface{}, matchObj interface{}) error {
 
-	nameSec := textSec("*Alert Name*", name)
-	descSec := textSec("*Description*", desc)
-
 	jsonObj, err := json.MarshalIndent(rec, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshal obj err: %w", err)
 	}
 
-	recSec := codeSec("*Cloudtrail Record*", string(jsonObj))
-
-	var matchSec *slack.SectionBlock
+	var matchTxt string
 
 	m, ok := matchObj.(map[string]interface{})
 	if !ok || !reflect.DeepEqual(rec, m) {
 		b, err := json.MarshalIndent(matchObj, "", "  ")
 		if err == nil {
-			matchSec = codeSec("*Match*", string(b))
+			matchTxt = string(b)
 		}
 	}
 
-	lblHeader := slack.NewTextBlockObject("plain_text", "Cloudtrail Tattletail event", false, false)
-	secHeader := slack.NewHeaderBlock(lblHeader)
-
 	msg := slack.WebhookMessage{
-		Blocks: &slack.Blocks{
-			BlockSet: []slack.Block{
-				secHeader,
-				nameSec,
-				descSec,
-				recSec,
+		IconEmoji: "red_circle",
+		Username:  "Cloudtrail Tattletail",
+		Attachments: []slack.Attachment{
+			{
+				Color: "danger",
+				Title: "Cloudtrail Tattletail Event",
+				Text:  string(jsonObj),
+				Fields: []slack.AttachmentField{
+					{
+						Title: "Alert Name",
+						Value: name,
+						Short: true,
+					},
+					{
+						Title: "Description",
+						Value: desc,
+						Short: true,
+					},
+				},
 			},
 		},
 	}
 
-	if matchSec != nil {
-		msg.Blocks.BlockSet = append(msg.Blocks.BlockSet, matchSec)
+	if matchTxt != "" {
+		msg.Attachments[0].Fields = append(msg.Attachments[0].Fields, slack.AttachmentField{
+			Title: "Match",
+			Value: matchTxt,
+		})
 	}
 
 	return slack.PostWebhook(d.webhookURL, &msg)
-}
-
-func textSec(label, text string) *slack.SectionBlock {
-	lbl := slack.NewTextBlockObject("mrkdwn", label, false, false)
-	fields := []*slack.TextBlockObject{
-		slack.NewTextBlockObject("plain_text", text, false, false),
-	}
-	return slack.NewSectionBlock(lbl, fields, nil)
-}
-
-func codeSec(label, text string) *slack.SectionBlock {
-	lbl := slack.NewTextBlockObject("mrkdwn", label, false, false)
-	fields := []*slack.TextBlockObject{
-		slack.NewTextBlockObject("mrkdwn", "```"+text+"```", false, true),
-	}
-	return slack.NewSectionBlock(lbl, fields, nil)
 }

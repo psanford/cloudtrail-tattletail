@@ -27,6 +27,8 @@ import (
 
 func main() {
 	awsstub.InitAWS()
+	handler := log15.StreamHandler(os.Stdout, log15.LogfmtFormat())
+	log15.Root().SetHandler(handler)
 	s := newServer()
 	lambda.Start(s.Handler)
 }
@@ -54,8 +56,6 @@ type server struct {
 }
 
 func (s *server) Handler(evt events.S3Event) error {
-	handler := log15.StreamHandler(os.Stdout, log15.LogfmtFormat())
-	log15.Root().SetHandler(handler)
 	lgr := log15.New()
 
 	err := s.loadConfig(lgr)
@@ -136,6 +136,8 @@ func (s *server) loadConfig(lgr log15.Logger) error {
 		destinations[d.ID()] = d
 	}
 
+	s.rules = make([]Rule, 0, len(conf.Rules))
+
 	for i, rule := range conf.Rules {
 		r := Rule{
 			name: rule.Name,
@@ -214,14 +216,19 @@ func (s *server) handleRecord(lgr log15.Logger, s3rec events.S3EventRecord) erro
 
 	for _, rec := range doc.Records {
 		for _, rule := range s.rules {
+			var evtID string
+			idI, ok := rec["eventID"]
+			if ok {
+				evtID, _ = idI.(string)
+			}
 			if match, obj := rule.Match(lgr, rec); match {
 				matchCount++
-				lgr.Info("rule_matched", "rule_name", rule.name)
+				lgr.Info("rule_matched", "rule_name", rule.name, "evt_id", evtID)
 				for _, dest := range rule.dests {
-					lgr.Info("publish_alert", "dest", dest)
+					lgr.Info("publish_alert", "dest", dest, "rule_name", rule.name, "evt_id", evtID)
 					err = dest.Send(rule.name, rule.desc, rec, obj)
 					if err != nil {
-						lgr.Error("publish_alert_err", "err", err, "type", dest.Type(), "rule_name", rule.name)
+						lgr.Error("publish_alert_err", "err", err, "type", dest.Type(), "rule_name", rule.name, "evt_id", evtID)
 					}
 				}
 			}

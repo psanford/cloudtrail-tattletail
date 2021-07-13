@@ -22,6 +22,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ses"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/google/go-cmp/cmp"
+	"github.com/inconshreveable/log15"
 	"github.com/psanford/cloudtrail-tattletail/awsstub"
 	"github.com/psanford/cloudtrail-tattletail/internal/destsns"
 )
@@ -37,6 +38,8 @@ func TestRuleMatchingForwarding(t *testing.T) {
 	awsstub.S3GetObjWithContext = fakeGetObjWithContext
 	awsstub.SnsPublish = fakeSNSPublish
 	awsstub.SendEmail = fakeSendEmail
+
+	log15.Root().SetHandler(log15.DiscardHandler())
 
 	jsonTxt, err := ioutil.ReadFile("testdata/1.json")
 	if err != nil {
@@ -122,7 +125,7 @@ from_email = "cloudtrail_tattletail@example.com"
 	os.Setenv("AWS_REGION", "us-east-1")
 
 	server := newServer()
-	err = server.Handler(events.S3Event{
+	evt := events.S3Event{
 		Records: []events.S3EventRecord{
 			{
 				S3: events.S3Entity{
@@ -135,9 +138,18 @@ from_email = "cloudtrail_tattletail@example.com"
 				},
 			},
 		},
-	})
-	if err != nil {
-		t.Fatal(err)
+	}
+
+	// run twice to make sure we arn't doing anything wrong with double loading config
+	for i := 0; i < 2; i++ {
+		snsMessages = snsMessages[:0]
+		sentEmails = sentEmails[:0]
+		webhookPayloads = webhookPayloads[:0]
+
+		err = server.Handler(evt)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	var doc struct {
@@ -171,8 +183,37 @@ from_email = "cloudtrail_tattletail@example.com"
 		t.Fatal(err)
 	}
 
-	if len(webhookMsg.Blocks) != 5 {
-		t.Fatalf("Expected 5 slack blocks but got %d", len(webhookMsg.Blocks))
+	expectWebhook := slackMsg{
+		IconEmoji: "red_circle",
+		Username:  "Cloudtrail Tattletail",
+		Attachments: []slackAttachment{
+			{
+				Color: "danger",
+				Title: "Cloudtrail Tattletail Event",
+				Text:  webhookMsg.Attachments[0].Text,
+				Fields: []slackField{
+					{
+						Title: "Alert Name",
+						Value: "Create User",
+						Short: true,
+					},
+					{
+						Title: "Description",
+						Value: "A new IAM user has been created",
+						Short: true,
+					},
+					{
+						Title: "Match",
+						Value: `"username: user1"`,
+						Short: false,
+					},
+				},
+			},
+		},
+	}
+
+	if !cmp.Equal(webhookMsg, expectWebhook) {
+		t.Fatal(cmp.Diff(webhookMsg, expectWebhook))
 	}
 
 	if len(sentEmails) != 1 {
@@ -245,24 +286,22 @@ func fakeSendEmail(i *ses.SendEmailInput) (*ses.SendEmailOutput, error) {
 }
 
 type slackMsg struct {
-	Blocks []slackBlock `json:"blocks"`
+	IconEmoji   string            `json:"icon_emoji"`
+	Username    string            `json:"username"`
+	Attachments []slackAttachment `json:"attachments"`
 }
 
-type slackBlock struct {
+type slackAttachment struct {
+	Color  string       `json:"color"`
+	Title  string       `json:"title"`
+	Text   string       `json:"text"`
 	Fields []slackField `json:"fields"`
-	Text   slackText    `json:"text"`
-	Type   string       `json:"type"`
 }
 
 type slackField struct {
-	Text     string `json:"text"`
-	Type     string `json:"type"`
-	Verbatim bool   `json:"verbatim"`
-}
-
-type slackText struct {
-	Text string `json:"text"`
-	Type string `json:"type"`
+	Title string `json:"title"`
+	Value string `json:"value"`
+	Short bool   `json:"short"`
 }
 
 type sentEmail struct {
