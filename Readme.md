@@ -82,4 +82,8 @@ Add any permissions for invoking SNS or SES if you are using those destination t
 
 # Screenshots
 
-<img src="https://raw.githubusercontent.com/psanford/cloudtrail-tattletail/main/screenshots/slack-webhook.png?raw=true" alt="Slack Webhook" width="637" />
+### Slack Webhook
+<img src="https://raw.githubusercontent.com/psanford/cloudtrail-tattletail/main/screenshots/slack-webhook.png?raw=true" alt="Slack Webhook" />
+
+### Email (SES)
+<img src="https://raw.githubusercontent.com/psanford/cloudtrail-tattletail/main/screenshots/email.png?raw=true" alt="Email" />
