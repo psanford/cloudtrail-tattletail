@@ -18,6 +18,7 @@ import (
 	"github.com/psanford/cloudtrail-tattletail/awsstub"
 	"github.com/psanford/cloudtrail-tattletail/config"
 	"github.com/psanford/cloudtrail-tattletail/internal/destination"
+	"github.com/psanford/cloudtrail-tattletail/internal/destses"
 	"github.com/psanford/cloudtrail-tattletail/internal/destslack"
 	"github.com/psanford/cloudtrail-tattletail/internal/destsns"
 )
@@ -31,6 +32,7 @@ func main() {
 func newServer() *server {
 	loaders := []destination.Loader{
 		destsns.NewLoader(),
+		destses.NewLoader(),
 		destslack.NewLoader(),
 	}
 

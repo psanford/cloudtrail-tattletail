@@ -23,8 +23,8 @@ type Destination struct {
 	// WebhookURL is for type "slack_webhook"
 	WebhookURL string `toml:"webhook_url"`
 
-	// ToEmail is for type SES
-	ToEmail string `toml:"to_email"`
-	// FromEmail is for type SES
+	// ToEmails is for type "ses"
+	ToEmails []string `toml:"to_emails"`
+	// FromEmail is for type "ses"
 	FromEmail string `toml:"from_email"`
 }

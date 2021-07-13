@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go/service/ses"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/google/go-cmp/cmp"
 	"github.com/psanford/cloudtrail-tattletail/awsstub"
@@ -25,11 +27,13 @@ import (
 var (
 	fakeS3      = make(map[bucketKey][]byte)
 	snsMessages []destsns.Payload
+	sentEmails  []sentEmail
 )
 
-func TestRuleMatchingSNS(t *testing.T) {
+func TestRuleMatchingForwarding(t *testing.T) {
 	awsstub.S3GetObj = fakeGetObj
 	awsstub.SnsPublish = fakeSNSPublish
+	awsstub.SendEmail = fakeSendEmail
 
 	jsonTxt, err := ioutil.ReadFile("testdata/1.json")
 	if err != nil {
@@ -78,7 +82,7 @@ func TestRuleMatchingSNS(t *testing.T) {
 [[rule]]
 name = "Create User"
 jq_match = 'select(.eventName == "CreateUser") | "username: \(.responseElements.user.userName)"'
-destinations = ["Default SNS", "Default Slack"]
+destinations = ["Default SNS", "Default Slack", "Default SES Email"]
 description = "A new IAM user has been created"
 
 [[destination]]
@@ -90,6 +94,12 @@ sns_arn = "arn:aws:sns:us-east-1:1234567890:cloudtail_alert"
 id = "Default Slack"
 type = "slack_webhook"
 webhook_url = "%s"
+
+[[destination]]
+id = "Default SES Email"
+type = "ses"
+to_emails = ["foo@example.com", "bar@example.com"]
+from_email = "cloudtrail_tattletail@example.com"
 `
 	config := fmt.Sprintf(configTmpl, fakeSlack.URL)
 
@@ -161,6 +171,10 @@ webhook_url = "%s"
 	if len(webhookMsg.Blocks) != 5 {
 		t.Fatalf("Expected 5 slack blocks but got %d", len(webhookMsg.Blocks))
 	}
+
+	if len(sentEmails) != 1 {
+		t.Fatalf("Expected 1 send email but got %d", len(sentEmails))
+	}
 }
 
 func fakeGetObj(i *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
@@ -204,6 +218,25 @@ func fakeSNSPublish(i *sns.PublishInput) (*sns.PublishOutput, error) {
 	return nil, nil
 }
 
+func fakeSendEmail(i *ses.SendEmailInput) (*ses.SendEmailOutput, error) {
+
+	id := make([]byte, 32)
+	_, err := io.ReadFull(rand.Reader, id)
+	if err != nil {
+		panic(err)
+	}
+
+	idStr := fmt.Sprintf("%x", id)
+	sent := sentEmail{
+		input:  i,
+		sendID: idStr,
+	}
+
+	sentEmails = append(sentEmails, sent)
+
+	return &ses.SendEmailOutput{MessageId: &idStr}, nil
+}
+
 type slackMsg struct {
 	Blocks []slackBlock `json:"blocks"`
 }
@@ -223,4 +256,9 @@ type slackField struct {
 type slackText struct {
 	Text string `json:"text"`
 	Type string `json:"type"`
+}
+
+type sentEmail struct {
+	input  *ses.SendEmailInput
+	sendID string
 }
