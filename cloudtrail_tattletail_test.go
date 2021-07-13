@@ -14,7 +14,9 @@ import (
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/ses"
@@ -32,6 +34,7 @@ var (
 
 func TestRuleMatchingForwarding(t *testing.T) {
 	awsstub.S3GetObj = fakeGetObj
+	awsstub.S3GetObjWithContext = fakeGetObjWithContext
 	awsstub.SnsPublish = fakeSNSPublish
 	awsstub.SendEmail = fakeSendEmail
 
@@ -187,6 +190,10 @@ func fakeGetObj(i *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
 	}
 
 	return nil, awserr.New(s3.ErrCodeNoSuchKey, s3.ErrCodeNoSuchKey, nil)
+}
+
+func fakeGetObjWithContext(ctx aws.Context, i *s3.GetObjectInput, opts ...request.Option) (*s3.GetObjectOutput, error) {
+	return fakeGetObj(i)
 }
 
 func fakePutObj(i *s3manager.UploadInput, o ...func(*s3manager.Uploader)) (*s3manager.UploadOutput, error) {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/inconshreveable/log15"
 	"github.com/itchyny/gojq"
@@ -158,6 +160,7 @@ func (s *server) loadConfig(lgr log15.Logger) error {
 		}
 
 		s.rules = append(s.rules, r)
+		lgr.Info("loaded_rule", "name", r.name)
 	}
 
 	return nil
@@ -168,13 +171,18 @@ func (s *server) handleRecord(lgr log15.Logger, s3rec events.S3EventRecord) erro
 	file := s3rec.S3.Object.Key
 
 	lgr = lgr.New("cloudtrail_file", file)
+	lgr.Info("process_file")
 
 	getInput := s3.GetObjectInput{
 		Bucket: &bucket,
 		Key:    &file,
 	}
 
-	resp, err := awsstub.S3GetObj(&getInput)
+	dontAutoInflate := func(r *request.Request) {
+		r.HTTPRequest.Header.Add("Accept-Encoding", "gzip")
+	}
+
+	resp, err := awsstub.S3GetObjWithContext(context.Background(), &getInput, dontAutoInflate)
 	if err != nil {
 		lgr.Error("s3_fetch_err", "err", err)
 		return err
@@ -202,10 +210,15 @@ func (s *server) handleRecord(lgr log15.Logger, s3rec events.S3EventRecord) erro
 		return err
 	}
 
+	var matchCount int
+
 	for _, rec := range doc.Records {
 		for _, rule := range s.rules {
 			if match, obj := rule.Match(lgr, rec); match {
+				matchCount++
+				lgr.Info("rule_matched", "rule_name", rule.name)
 				for _, dest := range rule.dests {
+					lgr.Info("publish_alert", "dest", dest)
 					err = dest.Send(rule.name, rule.desc, rec, obj)
 					if err != nil {
 						lgr.Error("publish_alert_err", "err", err, "type", dest.Type(), "rule_name", rule.name)
@@ -214,6 +227,8 @@ func (s *server) handleRecord(lgr log15.Logger, s3rec events.S3EventRecord) erro
 			}
 		}
 	}
+
+	lgr.Info("processing_complete", "record_count", len(doc.Records), "match_count", matchCount)
 
 	return nil
 }
