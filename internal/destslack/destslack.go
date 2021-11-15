@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/psanford/cloudtrail-tattletail/config"
 	"github.com/psanford/cloudtrail-tattletail/internal/destination"
@@ -100,4 +101,13 @@ func (d *DestSlackWebhook) Send(name, desc string, rec map[string]interface{}, m
 	}
 
 	return slack.PostWebhook(d.webhookURL, &msg)
+}
+
+func (d *DestSlackWebhook) String() string {
+	paths := strings.Split(d.webhookURL, "/")
+	if len(paths) > 4 {
+		paths[len(paths)-1] = "**FILTERED**"
+	}
+
+	return fmt.Sprintf("{id: %s webhookURL: %s}", d.id, strings.Join(paths, "/"))
 }
