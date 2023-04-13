@@ -87,7 +87,11 @@ func TestRuleMatchingForwarding(t *testing.T) {
 	configTmpl := `
 [[rule]]
 name = "Create User"
-jq_match = 'select(.eventName == "CreateUser") | "username: \(.responseElements.user.userName)"'
+jq_match = '''
+select(.eventName == "CreateUser") |
+"username: \(.responseElements.user.userName)"
+'''
+
 destinations = ["Default SNS", "Default Slack", "Default SES Email"]
 description = "A new IAM user has been created"
 

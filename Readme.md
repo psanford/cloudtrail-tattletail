@@ -35,7 +35,10 @@ Destinations are the upstream service that the alert should be forwarded to.
 ```
 [[rule]]
 name = "Create User"
-jq_match = 'select(.eventName == "CreateUser") | "username: \(.responseElements.user.userName)"'
+jq_match = '''
+select(.eventName == "CreateUser") |
+"username: \(.responseElements.user.userName)"
+'''
 description = "A new IAM user has been created"
 destinations = ["Default SNS", "Slack Warnings", "Email"]
 
